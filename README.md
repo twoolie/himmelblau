@@ -69,7 +69,7 @@ The following packages are required on openSUSE to build and test this package.
 Or on Debian based systems:
 
     sudo apt-get install make gcc libpam0g-dev libudev-dev libssl-dev pkg-config tpm-udev libtss2-dev libcap-dev libtalloc-dev libtevent-dev libldb-dev libdhash-dev libkrb5-dev libpcre2-dev libclang-18-dev autoconf gettext libsqlite3-dev build-essentials libdbus-1-dev libutf8proc-dev
-    
+
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     source "$HOME/.cargo/env"
     rustup default stable
@@ -116,7 +116,7 @@ Setup NSS
     group:      compat systemd himmelblau
     shadow:     compat systemd himmelblau
 
-Check that you can resolve a user with
+Check that you can resolve a user (after their first login) with
 
     getent passwd <name>
 
@@ -135,21 +135,20 @@ Setup PAM
     # vim /etc/pam.d/common-auth
     auth        required      pam_env.so
     auth        [default=1 ignore=ignore success=ok] pam_localuser.so
+    auth        sufficient    pam_himmelblau.so
     auth        sufficient    pam_unix.so nullok try_first_pass
-    auth        sufficient    pam_himmelblau.so ignore_unknown_user
     auth        required      pam_deny.so
 
     # vim /etc/pam.d/common-account
     account    [default=1 ignore=ignore success=ok] pam_localuser.so
-    account    sufficient    pam_unix.so
     account    sufficient    pam_himmelblau.so ignore_unknown_user
+    account    sufficient    pam_unix.so
     account    required      pam_deny.so
 
     # vim /etc/pam.d/common-session
     session optional    pam_systemd.so
     session required    pam_limits.so
+    session optional    pam_himmelblau.so
     session optional    pam_unix.so try_first_pass
     session optional    pam_umask.so
-    session optional    pam_himmelblau.so
     session optional    pam_env.so
-
