@@ -437,5 +437,33 @@
             environment.systemPackages = with pkgs; [ pamtester ];
           })];
         };
+
+      }) // flake-utils.lib.eachDefaultSystem (system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in {
+        checks.login = pkgs.nixosTest {
+          name = "check-login";
+          nodes.machine = {pkgs, ...}: {
+            imports = [ self.nixosModules.himmelblau ];
+            services.himmelblau = {
+              enable = true;
+              settings = {
+                domains = [ (
+                  let domain = builtins.getEnv "TEST_DOMAIN";
+                  in if domain != "" then domain else abort "No Domain"
+                ) ];
+                tenant_id = (builtins.getEnv "TEST_TENANT_ID");
+                pam_allow_groups = [ (builtins.getEnv "TEST_PAM_GROUP") ];
+              };
+            };
+            environment.systemPackages = with pkgs; [ pamtester ];
+          };
+
+          testScript = ''
+            machine.wait_for_unit("himmelblaud.service")
+            machine.wait_for_open_unix_socket("/var/run/himmelblaud/socket", is_datagram=False, timeout=10)
+            machine.wait_for_unit("himmelblaud-tasks.service")
+          '';
+        };
       });
 }
